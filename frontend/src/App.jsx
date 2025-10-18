@@ -12,9 +12,12 @@ import {
   Loader2,
   CheckCircle,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 function App() {
   const controller = useRef(null);
+  const inputRef = useRef(null)
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
@@ -37,11 +40,12 @@ function App() {
 
   useEffect(() => {
     scrollToBottom();
+    inputRef.current.focus()
   }, [messages]);
 
   const endSession = async () => {
     if (controller.current) {
-      controller.current.abort(); 
+      controller.current.abort();
     }
     setMessages([]);
     setSessionStarted(false);
@@ -54,7 +58,6 @@ function App() {
     setQuery("");
   };
   const startSession = async () => {
-
     try {
       setStartingSession(true);
       const response = await fetch(
@@ -149,15 +152,18 @@ function App() {
       }
       const botMessage = { type: "bot", content: data.answer };
       setMessages((prev) => [...prev, botMessage]);
+      setIsQuerying(false);
     } catch (error) {
       const errorMessage = {
         type: "bot",
         content:
-          "Sorry, your session has expired please reload the page and start again.",
+        "Sorry, your session has expired please reload the page and start again.",
       };
       setMessages((prev) => [...prev, errorMessage]);
-    } finally {
       setIsQuerying(false);
+    } finally {
+      if(inputRef.current)
+        inputRef.current.focus()
     }
   };
 
@@ -418,9 +424,15 @@ function App() {
                                 : "bg-white/10 border-white/20 text-white"
                             }`}
                           >
-                            <p className="whitespace-pre-wrap">
-                              {message.content}
-                            </p>
+                            {message.type === "user" ? (
+                              <p className="whitespace-pre-wrap">
+                                {message.content}
+                              </p>
+                            ) : (
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {String(message.content)}
+                              </ReactMarkdown>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -449,10 +461,11 @@ function App() {
                 <div className="max-w-4xl mx-auto">
                   <div className="flex gap-3">
                     <input
+                    ref={inputRef}
                       type="text"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      onKeyPress={handleKeyPress}
+                      onKeyDown={handleKeyPress}
                       placeholder="Ask a question about your document..."
                       className="flex-1 px-4 py-3 bg-white/10 backdrop-blur border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                       disabled={isQuerying}
@@ -489,27 +502,29 @@ function App() {
         </div>
       </div>
 
-      <style jsx>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
-          background: linear-gradient(45deg, #3b82f6, #8b5cf6);
-          cursor: pointer;
-          box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-        }
+      <style>
+        {`
+         .slider::-webkit-slider-thumb {
+                appearance: none;
+                height: 20px;
+                width: 20px;
+                border-radius: 50%;
+                background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+                cursor: pointer;
+                box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+              }
 
-        .slider::-moz-range-thumb {
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
-          background: linear-gradient(45deg, #3b82f6, #8b5cf6);
-          cursor: pointer;
-          border: none;
-          box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-        }
-      `}</style>
+              .slider::-moz-range-thumb {
+                height: 20px;
+                width: 20px;
+                border-radius: 50%;
+                background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+                cursor: pointer;
+                border: none;
+                box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+      }
+    `}
+      </style>
     </div>
   );
 }
