@@ -40,7 +40,9 @@ function App() {
 
   useEffect(() => {
     scrollToBottom();
-    inputRef.current.focus()
+    if(inputRef.current){
+      inputRef.current.focus()
+    }
   }, [messages]);
 
   const endSession = async () => {
